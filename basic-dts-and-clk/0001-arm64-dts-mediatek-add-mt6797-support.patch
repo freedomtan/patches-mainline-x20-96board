@@ -1,7 +1,7 @@
-From c2b4303fe51e93c21aeb436a6f60894cd04e8d0f Mon Sep 17 00:00:00 2001
+From b326d6f500b5e2810a27fc48277ca87cbde7a1e0 Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Thu, 8 Sep 2016 18:49:52 +0800
-Subject: [PATCH 7/8] arm64: dts: mediatek: add mt6797 support
+Subject: [PATCH 1/3] arm64: dts: mediatek: add mt6797 support
 
 This adds basic chip support for MT6797 SoC.
 

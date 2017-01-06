@@ -1,7 +1,7 @@
-From b43e2712c1d04d9f6e5d1b88e1be98cc6116059f Mon Sep 17 00:00:00 2001
+From fea2f3f043cda68680fe711d9f467566841c28b1 Mon Sep 17 00:00:00 2001
 From: Koan-Sin Tan <freedom.tan@mediatek.com>
 Date: Wed, 26 Oct 2016 13:27:32 +0800
-Subject: [PATCH 2/2] add device node for WDT
+Subject: [PATCH 2/3] add device node for WDT
 
 Add MediaTek watchdog timer (WDT) device for MT6797, so that we
 don't need to disable the WDT before the Linux kernel, such as

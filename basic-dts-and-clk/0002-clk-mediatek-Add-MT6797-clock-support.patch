@@ -1,7 +1,7 @@
-From b61f44a9fcab3cbf1d871546d95cc547405ecc03 Mon Sep 17 00:00:00 2001
+From 3085e84dc7fdf0946a1f8d579c338d06f49c7d2c Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Thu, 8 Sep 2016 18:49:53 +0800
-Subject: [PATCH 8/8] clk: mediatek: Add MT6797 clock support
+Subject: [PATCH 2/3] clk: mediatek: Add MT6797 clock support
 
 Add MT6797 clock support, include topckgen, apmixedsys,
 infracfg and subsystem clocks.
@@ -154,7 +154,7 @@ index 66f6442..75d3877 100644
 -
  };
 diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index 7202db5..77294a8 100644
+index 0bd631a..51611cd 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
 @@ -49,6 +49,42 @@ config COMMON_CLK_MT2701_BDPSYS
@@ -199,7 +199,7 @@ index 7202db5..77294a8 100644
 +
  config COMMON_CLK_MT8135
  	bool "Clock driver for Mediatek MT8135"
- 	select COMMON_CLK_MEDIATEK
+ 	depends on ARCH_MEDIATEK || COMPILE_TEST
 diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
 index 19ae7ef..a5bae28d 100644
 --- a/drivers/clk/mediatek/Makefile
@@ -216,10 +216,10 @@ index 19ae7ef..a5bae28d 100644
  obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
 diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index b2148b6..868b98c 100644
+index 6f26e6a..2fae6b4 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -779,8 +779,7 @@ static void mtk_infrasys_init_early(struct device_node *node)
+@@ -764,8 +764,7 @@ static void mtk_infrasys_init_early(struct device_node *node)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
  }
