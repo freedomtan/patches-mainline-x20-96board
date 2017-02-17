@@ -1,17 +1,18 @@
-From e452d7c63f7dd1d707365bd6bb456a4b6c429eb2 Mon Sep 17 00:00:00 2001
+From f50f2d760affc8818cbc278ca2fae8f7715461fd Mon Sep 17 00:00:00 2001
 From: Koan-Sin Tan <freedom.tan@mediatek.com>
 Date: Wed, 26 Oct 2016 08:56:52 +0800
 Subject: [PATCH 1/3] Add L2 cache topology to MT6797
 
+Signed-off-by: Koan-Sin Tan <koansin.tan@gmail.com>
 ---
  arch/arm64/boot/dts/mediatek/mt6797.dtsi | 23 +++++++++++++++++++++++
  1 file changed, 23 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/mediatek/mt6797.dtsi b/arch/arm64/boot/dts/mediatek/mt6797.dtsi
-index 75d3877..45a0465 100644
+index eca2376..1d42ad4 100644
 --- a/arch/arm64/boot/dts/mediatek/mt6797.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt6797.dtsi
-@@ -34,6 +34,7 @@
+@@ -36,6 +36,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x000>;
@@ -19,7 +20,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu1: cpu@1 {
-@@ -41,6 +42,7 @@
+@@ -43,6 +44,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x001>;
@@ -27,7 +28,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu2: cpu@2 {
-@@ -48,6 +50,7 @@
+@@ -50,6 +52,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x002>;
@@ -35,7 +36,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu3: cpu@3 {
-@@ -55,6 +58,7 @@
+@@ -57,6 +60,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x003>;
@@ -43,7 +44,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu4: cpu@100 {
-@@ -62,6 +66,7 @@
+@@ -64,6 +68,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x100>;
@@ -51,7 +52,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu5: cpu@101 {
-@@ -69,6 +74,7 @@
+@@ -71,6 +76,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x101>;
@@ -59,7 +60,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu6: cpu@102 {
-@@ -76,6 +82,7 @@
+@@ -78,6 +84,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x102>;
@@ -67,7 +68,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu7: cpu@103 {
-@@ -83,6 +90,7 @@
+@@ -85,6 +92,7 @@
  			compatible = "arm,cortex-a53";
  			enable-method = "psci";
  			reg = <0x103>;
@@ -75,7 +76,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu8: cpu@200 {
-@@ -90,6 +98,7 @@
+@@ -92,6 +100,7 @@
  			compatible = "arm,cortex-a72";
  			enable-method = "psci";
  			reg = <0x200>;
@@ -83,7 +84,7 @@ index 75d3877..45a0465 100644
  		};
  
  		cpu9: cpu@201 {
-@@ -97,7 +106,21 @@
+@@ -99,7 +108,21 @@
  			compatible = "arm,cortex-a72";
  			enable-method = "psci";
  			reg = <0x201>;

@@ -1,0 +1,111 @@
+From 36f3f35317eeedbefe83715f743707e521351ac6 Mon Sep 17 00:00:00 2001
+From: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
+Date: Mon, 6 Feb 2017 20:15:31 +0800
+Subject: [PATCH 05/13] dt-bindings: arm: mediatek: document clk bindings for
+ MT6797
+
+This patch adds the binding documentation for apmixedsys, imgsys,
+infracfg, mmsys, topckgen, vdecsys and vencsys for MT6797.
+
+Signed-off-by: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
+Signed-off-by: Mars Cheng <mars.cheng@mediatek.com>
+Acked-by: Rob Herring <robh@kernel.org>
+---
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt | 1 +
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt     | 1 +
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt   | 1 +
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt      | 1 +
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt   | 1 +
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt    | 1 +
+ Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt    | 3 ++-
+ 7 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt
+index cb0054a..cd977db 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,apmixedsys.txt
+@@ -7,6 +7,7 @@ Required Properties:
+ 
+ - compatible: Should be one of:
+ 	- "mediatek,mt2701-apmixedsys"
++	- "mediatek,mt6797-apmixedsys"
+ 	- "mediatek,mt8135-apmixedsys"
+ 	- "mediatek,mt8173-apmixedsys"
+ - #clock-cells: Must be 1
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt
+index f6a9166..047b11a 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,imgsys.txt
+@@ -7,6 +7,7 @@ Required Properties:
+ 
+ - compatible: Should be one of:
+ 	- "mediatek,mt2701-imgsys", "syscon"
++	- "mediatek,mt6797-imgsys", "syscon"
+ 	- "mediatek,mt8173-imgsys", "syscon"
+ - #clock-cells: Must be 1
+ 
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt
+index 1620ec2..58d58e2 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,infracfg.txt
+@@ -8,6 +8,7 @@ Required Properties:
+ 
+ - compatible: Should be one of:
+ 	- "mediatek,mt2701-infracfg", "syscon"
++	- "mediatek,mt6797-infracfg", "syscon"
+ 	- "mediatek,mt8135-infracfg", "syscon"
+ 	- "mediatek,mt8173-infracfg", "syscon"
+ - #clock-cells: Must be 1
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt
+index 67dd2e4..70529e0 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,mmsys.txt
+@@ -7,6 +7,7 @@ Required Properties:
+ 
+ - compatible: Should be one of:
+ 	- "mediatek,mt2701-mmsys", "syscon"
++	- "mediatek,mt6797-mmsys", "syscon"
+ 	- "mediatek,mt8173-mmsys", "syscon"
+ - #clock-cells: Must be 1
+ 
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt
+index 9f2fe78..ec93ecb 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,topckgen.txt
+@@ -7,6 +7,7 @@ Required Properties:
+ 
+ - compatible: Should be one of:
+ 	- "mediatek,mt2701-topckgen"
++	- "mediatek,mt6797-topckgen"
+ 	- "mediatek,mt8135-topckgen"
+ 	- "mediatek,mt8173-topckgen"
+ - #clock-cells: Must be 1
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt
+index 2440f73..d150104 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vdecsys.txt
+@@ -7,6 +7,7 @@ Required Properties:
+ 
+ - compatible: Should be one of:
+ 	- "mediatek,mt2701-vdecsys", "syscon"
++	- "mediatek,mt6797-vdecsys", "syscon"
+ 	- "mediatek,mt8173-vdecsys", "syscon"
+ - #clock-cells: Must be 1
+ 
+diff --git a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt
+index 5bb2866..8a93be6 100644
+--- a/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt
++++ b/Documentation/devicetree/bindings/arm/mediatek/mediatek,vencsys.txt
+@@ -5,7 +5,8 @@ The Mediatek vencsys controller provides various clocks to the system.
+ 
+ Required Properties:
+ 
+-- compatible: Should be:
++- compatible: Should be one of:
++	- "mediatek,mt6797-vencsys", "syscon"
+ 	- "mediatek,mt8173-vencsys", "syscon"
+ - #clock-cells: Must be 1
+ 
+-- 
+2.7.4
+

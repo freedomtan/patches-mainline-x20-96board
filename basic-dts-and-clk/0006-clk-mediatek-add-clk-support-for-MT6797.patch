@@ -1,24 +1,24 @@
-From 3085e84dc7fdf0946a1f8d579c338d06f49c7d2c Mon Sep 17 00:00:00 2001
-From: Mars Cheng <mars.cheng@mediatek.com>
-Date: Thu, 8 Sep 2016 18:49:53 +0800
-Subject: [PATCH 2/3] clk: mediatek: Add MT6797 clock support
+From c42014d7bd6e10dbfa2606e55b501d7279d20db3 Mon Sep 17 00:00:00 2001
+From: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
+Date: Mon, 6 Feb 2017 20:15:32 +0800
+Subject: [PATCH 06/13] clk: mediatek: add clk support for MT6797
 
-Add MT6797 clock support, include topckgen, apmixedsys,
-infracfg and subsystem clocks.
+Add MT6797 clock support, include topckgen, apmixedsys, infracfg
+and subsystem clocks
 
+Signed-off-by: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
 Signed-off-by: Mars Cheng <mars.cheng@mediatek.com>
+Tested-by: Matthias Brugger <matthias.bgg@gmail.com>
 ---
- arch/arm64/boot/dts/mediatek/mt6797.dtsi |  66 ++-
- drivers/clk/mediatek/Kconfig             |  36 ++
- drivers/clk/mediatek/Makefile            |   5 +
- drivers/clk/mediatek/clk-mt2701.c        |   3 +-
- drivers/clk/mediatek/clk-mt6797-img.c    |  87 ++++
- drivers/clk/mediatek/clk-mt6797-mm.c     | 146 +++++++
- drivers/clk/mediatek/clk-mt6797-vdec.c   | 102 +++++
- drivers/clk/mediatek/clk-mt6797-venc.c   |  86 ++++
- drivers/clk/mediatek/clk-mt6797.c        | 716 +++++++++++++++++++++++++++++++
- include/dt-bindings/clock/mt6797-clk.h   | 281 ++++++++++++
- 10 files changed, 1515 insertions(+), 13 deletions(-)
+ drivers/clk/mediatek/Kconfig           |  33 ++
+ drivers/clk/mediatek/Makefile          |   5 +
+ drivers/clk/mediatek/clk-mt6797-img.c  |  76 ++++
+ drivers/clk/mediatek/clk-mt6797-mm.c   | 136 +++++++
+ drivers/clk/mediatek/clk-mt6797-vdec.c |  93 +++++
+ drivers/clk/mediatek/clk-mt6797-venc.c |  78 ++++
+ drivers/clk/mediatek/clk-mt6797.c      | 716 +++++++++++++++++++++++++++++++++
+ include/dt-bindings/clock/mt6797-clk.h | 281 +++++++++++++
+ 8 files changed, 1418 insertions(+)
  create mode 100644 drivers/clk/mediatek/clk-mt6797-img.c
  create mode 100644 drivers/clk/mediatek/clk-mt6797-mm.c
  create mode 100644 drivers/clk/mediatek/clk-mt6797-vdec.c
@@ -26,216 +26,72 @@ Signed-off-by: Mars Cheng <mars.cheng@mediatek.com>
  create mode 100644 drivers/clk/mediatek/clk-mt6797.c
  create mode 100644 include/dt-bindings/clock/mt6797-clk.h
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt6797.dtsi b/arch/arm64/boot/dts/mediatek/mt6797.dtsi
-index 66f6442..75d3877 100644
---- a/arch/arm64/boot/dts/mediatek/mt6797.dtsi
-+++ b/arch/arm64/boot/dts/mediatek/mt6797.dtsi
-@@ -10,6 +10,7 @@
-  * GNU General Public License for more details.
-  */
- 
-+#include <dt-bindings/clock/mt6797-clk.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- #include <dt-bindings/interrupt-controller/arm-gic.h>
- 
-@@ -113,12 +114,6 @@
- 		clock-output-names = "clk32k";
- 	};
- 
--	uart_clk: dummy26m {
--		compatible = "fixed-clock";
--		clock-frequency = <26000000>;
--		#clock-cells = <0>;
--	};
--
- 	timer {
- 		compatible = "arm,armv8-timer";
- 		interrupt-parent = <&gic>;
-@@ -132,6 +127,24 @@
- 			     (GIC_CPU_MASK_SIMPLE(10) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
- 
-+	topckgen: topckgen@10000000 {
-+		compatible = "mediatek,mt6797-topckgen";
-+		reg = <0 0x10000000 0 0x1000>;
-+		#clock-cells = <1>;
-+	};
-+
-+	infrasys: infracfg_ao@10001000 {
-+		compatible = "mediatek,mt6797-infracfg", "syscon";
-+		reg = <0 0x10001000 0 0x1000>;
-+		#clock-cells = <1>;
-+	};
-+
-+	apmixedsys: apmixed@1000c000 {
-+		compatible = "mediatek,mt6797-apmixedsys";
-+		reg = <0 0x1000c000 0 0x1000>;
-+		#clock-cells = <1>;
-+	};
-+
- 	sysirq: intpol-controller@10200620 {
- 		compatible = "mediatek,mt6797-sysirq",
- 			     "mediatek,mt6577-sysirq";
-@@ -148,7 +161,9 @@
- 			     "mediatek,mt6577-uart";
- 		reg = <0 0x11002000 0 0x400>;
- 		interrupts = <GIC_SPI 91 IRQ_TYPE_LEVEL_LOW>;
--		clocks = <&uart_clk>;
-+		clocks = <&infrasys CLK_INFRA_UART0>,
-+			 <&infrasys CLK_INFRA_AP_DMA>;
-+		clock-names = "baud", "bus";
- 		status = "disabled";
- 	};
- 
-@@ -157,7 +172,9 @@
- 			     "mediatek,mt6577-uart";
- 		reg = <0 0x11003000 0 0x400>;
- 		interrupts = <GIC_SPI 92 IRQ_TYPE_LEVEL_LOW>;
--		clocks = <&uart_clk>;
-+		clocks = <&infrasys CLK_INFRA_UART1>,
-+			 <&infrasys CLK_INFRA_AP_DMA>;
-+		clock-names = "baud", "bus";
- 		status = "disabled";
- 	};
- 
-@@ -166,7 +183,9 @@
- 			     "mediatek,mt6577-uart";
- 		reg = <0 0x11004000 0 0x400>;
- 		interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL_LOW>;
--		clocks = <&uart_clk>;
-+		clocks = <&infrasys CLK_INFRA_UART2>,
-+			 <&infrasys CLK_INFRA_AP_DMA>;
-+		clock-names = "baud", "bus";
- 		status = "disabled";
- 	};
- 
-@@ -175,10 +194,36 @@
- 			     "mediatek,mt6577-uart";
- 		reg = <0 0x11005000 0 0x400>;
- 		interrupts = <GIC_SPI 94 IRQ_TYPE_LEVEL_LOW>;
--		clocks = <&uart_clk>;
-+		clocks = <&infrasys CLK_INFRA_UART3>,
-+			 <&infrasys CLK_INFRA_AP_DMA>;
-+		clock-names = "baud", "bus";
- 		status = "disabled";
- 	};
- 
-+	mmsys: mmsys_config@14000000 {
-+		compatible = "mediatek,mt6797-mmsys", "syscon";
-+		reg = <0 0x14000000 0 0x1000>;
-+		#clock-cells = <1>;
-+	};
-+
-+	imgsys: imgsys_config@15000000  {
-+		compatible = "mediatek,mt6797-imgsys", "syscon";
-+		reg = <0 0x15000000 0 0x1000>;
-+		#clock-cells = <1>;
-+	};
-+
-+	vdecsys: vdec_gcon@16000000 {
-+		compatible = "mediatek,mt6797-vdecsys", "syscon";
-+		reg = <0 0x16000000 0 0x10000>;
-+		#clock-cells = <1>;
-+	};
-+
-+	vencsys: venc_gcon@17000000 {
-+		compatible = "mediatek,mt6797-vencsys", "syscon";
-+		reg = <0 0x17000000 0 0x1000>;
-+		#clock-cells = <1>;
-+	};
-+
- 	gic: interrupt-controller@19000000 {
- 		compatible = "arm,gic-v3";
- 		#interrupt-cells = <3>;
-@@ -189,5 +234,4 @@
- 		      <0 0x19200000 0 0x200000>,   /* GICR */
- 		      <0 0x10240000 0 0x2000>;     /* GICC */
- 	};
--
- };
 diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index 0bd631a..51611cd 100644
+index 0bd631a..4b91eed 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
-@@ -49,6 +49,42 @@ config COMMON_CLK_MT2701_BDPSYS
+@@ -49,6 +49,39 @@ config COMMON_CLK_MT2701_BDPSYS
  	---help---
  	  This driver supports Mediatek MT2701 bdpsys clocks.
  
 +config COMMON_CLK_MT6797
-+	bool "Clock driver for Mediatek MT6797"
-+	depends on COMMON_CLK
-+	select COMMON_CLK_MEDIATEK
-+	default ARCH_MEDIATEK
-+	---help---
-+	  This driver supports Mediatek MT6797 basic clocks.
++       bool "Clock driver for Mediatek MT6797"
++       depends on (ARCH_MEDIATEK && ARM64) || COMPILE_TEST
++       select COMMON_CLK_MEDIATEK
++       default ARCH_MEDIATEK && ARM64
++       ---help---
++         This driver supports Mediatek MT6797 basic clocks.
 +
 +config COMMON_CLK_MT6797_MMSYS
-+	bool "Clock driver for Mediatek MT6797 mmsys"
-+	depends on COMMON_CLK
-+	select COMMON_CLK_MT6797
-+	---help---
-+	  This driver supports Mediatek MT6797 mmsys clocks.
++       bool "Clock driver for Mediatek MT6797 mmsys"
++       depends on COMMON_CLK_MT6797
++       ---help---
++         This driver supports Mediatek MT6797 mmsys clocks.
 +
 +config COMMON_CLK_MT6797_IMGSYS
-+	bool "Clock driver for Mediatek MT6797 imgsys"
-+	depends on COMMON_CLK
-+	select COMMON_CLK_MT6797
-+	---help---
-+	  This driver supports Mediatek MT6797 imgsys clocks.
++       bool "Clock driver for Mediatek MT6797 imgsys"
++       depends on COMMON_CLK_MT6797
++       ---help---
++         This driver supports Mediatek MT6797 imgsys clocks.
 +
 +config COMMON_CLK_MT6797_VDECSYS
-+	bool "Clock driver for Mediatek MT6797 vdecsys"
-+	depends on COMMON_CLK
-+	select COMMON_CLK_MT6797
-+	---help---
-+	  This driver supports Mediatek MT6797 vdecsys clocks.
++       bool "Clock driver for Mediatek MT6797 vdecsys"
++       depends on COMMON_CLK_MT6797
++       ---help---
++         This driver supports Mediatek MT6797 vdecsys clocks.
 +
 +config COMMON_CLK_MT6797_VENCSYS
-+	bool "Clock driver for Mediatek MT6797 vencsys"
-+	depends on COMMON_CLK
-+	select COMMON_CLK_MT6797
-+	---help---
-+	  This driver supports Mediatek MT6797 vencsys clocks.
++       bool "Clock driver for Mediatek MT6797 vencsys"
++       depends on COMMON_CLK_MT6797
++       ---help---
++         This driver supports Mediatek MT6797 vencsys clocks.
++
 +
  config COMMON_CLK_MT8135
  	bool "Clock driver for Mediatek MT8135"
  	depends on ARCH_MEDIATEK || COMPILE_TEST
 diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 19ae7ef..a5bae28d 100644
+index 19ae7ef..5c3afb8 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
-@@ -7,5 +7,10 @@ obj-$(CONFIG_COMMON_CLK_MT2701_HIFSYS) += clk-mt2701-hif.o
- obj-$(CONFIG_COMMON_CLK_MT2701_IMGSYS) += clk-mt2701-img.o
- obj-$(CONFIG_COMMON_CLK_MT2701_MMSYS) += clk-mt2701-mm.o
- obj-$(CONFIG_COMMON_CLK_MT2701_VDECSYS) += clk-mt2701-vdec.o
+@@ -1,5 +1,10 @@
+ obj-$(CONFIG_COMMON_CLK_MEDIATEK) += clk-mtk.o clk-pll.o clk-gate.o clk-apmixed.o
+ obj-$(CONFIG_RESET_CONTROLLER) += reset.o
 +obj-$(CONFIG_COMMON_CLK_MT6797) += clk-mt6797.o
 +obj-$(CONFIG_COMMON_CLK_MT6797_IMGSYS) += clk-mt6797-img.o
 +obj-$(CONFIG_COMMON_CLK_MT6797_MMSYS) += clk-mt6797-mm.o
 +obj-$(CONFIG_COMMON_CLK_MT6797_VDECSYS) += clk-mt6797-vdec.o
 +obj-$(CONFIG_COMMON_CLK_MT6797_VENCSYS) += clk-mt6797-venc.o
- obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
- obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index 6f26e6a..2fae6b4 100644
---- a/drivers/clk/mediatek/clk-mt2701.c
-+++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -764,8 +764,7 @@ static void mtk_infrasys_init_early(struct device_node *node)
- 		pr_err("%s(): could not register clock provider: %d\n",
- 			__func__, r);
- }
--CLK_OF_DECLARE_DRIVER(mtk_infra, "mediatek,mt2701-infracfg",
--			mtk_infrasys_init_early);
-+CLK_OF_DECLARE(mtk_infra, "mediatek,mt2701-infracfg", mtk_infrasys_init_early);
- 
- static int mtk_infrasys_init(struct platform_device *pdev)
- {
+ obj-$(CONFIG_COMMON_CLK_MT2701) += clk-mt2701.o
+ obj-$(CONFIG_COMMON_CLK_MT2701_BDPSYS) += clk-mt2701-bdp.o
+ obj-$(CONFIG_COMMON_CLK_MT2701_ETHSYS) += clk-mt2701-eth.o
 diff --git a/drivers/clk/mediatek/clk-mt6797-img.c b/drivers/clk/mediatek/clk-mt6797-img.c
 new file mode 100644
-index 0000000..4ecd201
+index 0000000..94cc480
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt6797-img.c
-@@ -0,0 +1,87 @@
-+/* Copyright (c) 2016 MediaTek Inc.
+@@ -0,0 +1,76 @@
++/* Copyright (c) 2017 MediaTek Inc.
 + * Author: Kevin Chen <kevin-cw.chen@mediatek.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -248,7 +104,7 @@ index 0000000..4ecd201
 + * GNU General Public License for more details.
 + */
 +
-+#include <linux/clk.h>
++#include <linux/clk-provider.h>
 +#include <linux/platform_device.h>
 +#include <dt-bindings/clock/mt6797-clk.h>
 +
@@ -277,32 +133,6 @@ index 0000000..4ecd201
 +	GATE_IMG(CLK_IMG_LARB6, "img_larb6", "mm_sel", 0),
 +};
 +
-+static int mtk_imgsys_init(struct device *dev)
-+{
-+	struct clk_onecell_data *clk_data;
-+	int r;
-+
-+	clk_data = mtk_alloc_clk_data(CLK_IMG_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
-+
-+	mtk_clk_register_gates(dev->of_node, img_clks, ARRAY_SIZE(img_clks),
-+			       clk_data);
-+
-+	r = of_clk_add_provider(dev->of_node, of_clk_src_onecell_get,
-+				clk_data);
-+	if (r)
-+		pr_err("%s: could not register clock provider: %d\n",
-+		       __func__, r);
-+
-+	return r;
-+
-+alloc_err:
-+	return -ENOMEM;
-+}
-+
 +static const struct of_device_id of_match_clk_mt6797_img[] = {
 +	{ .compatible = "mediatek,mt6797-imgsys", },
 +	{}
@@ -310,7 +140,22 @@ index 0000000..4ecd201
 +
 +static int clk_mt6797_img_probe(struct platform_device *pdev)
 +{
-+	return mtk_imgsys_init(&pdev->dev);
++	struct clk_onecell_data *clk_data;
++	int r;
++	struct device_node *node = pdev->dev.of_node;
++
++	clk_data = mtk_alloc_clk_data(CLK_IMG_NR);
++
++	mtk_clk_register_gates(node, img_clks, ARRAY_SIZE(img_clks),
++			       clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
++	if (r)
++		dev_err(&pdev->dev,
++			"could not register clock provider: %s: %d\n",
++			pdev->name, r);
++
++	return r;
 +}
 +
 +static struct platform_driver clk_mt6797_img_drv = {
@@ -324,12 +169,12 @@ index 0000000..4ecd201
 +builtin_platform_driver(clk_mt6797_img_drv);
 diff --git a/drivers/clk/mediatek/clk-mt6797-mm.c b/drivers/clk/mediatek/clk-mt6797-mm.c
 new file mode 100644
-index 0000000..50f0589
+index 0000000..c57d3ee
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt6797-mm.c
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,136 @@
 +/*
-+ * Copyright (c) 2016 MediaTek Inc.
++ * Copyright (c) 2017 MediaTek Inc.
 + * Author: Kevin Chen <kevin-cw.chen@mediatek.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -342,7 +187,7 @@ index 0000000..50f0589
 + * GNU General Public License for more details.
 + */
 +
-+#include <linux/clk.h>
++#include <linux/clk-provider.h>
 +#include <linux/platform_device.h>
 +#include <dt-bindings/clock/mt6797-clk.h>
 +
@@ -430,31 +275,6 @@ index 0000000..50f0589
 +		 "clk26m", 3),
 +};
 +
-+static int mtk_mmsys_init(struct device *dev)
-+{
-+	struct clk_onecell_data *clk_data;
-+	int r;
-+
-+	clk_data = mtk_alloc_clk_data(CLK_MM_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
-+
-+	mtk_clk_register_gates(dev->of_node, mm_clks, ARRAY_SIZE(mm_clks),
-+			       clk_data);
-+
-+	r = of_clk_add_provider(dev->of_node, of_clk_src_onecell_get, clk_data);
-+	if (r)
-+		pr_err("%s: could not register clock provider: %d\n",
-+		       __func__, r);
-+
-+	return r;
-+
-+alloc_err:
-+	return -ENOMEM;
-+}
-+
 +static const struct of_device_id of_match_clk_mt6797_mm[] = {
 +	{ .compatible = "mediatek,mt6797-mmsys", },
 +	{}
@@ -462,7 +282,22 @@ index 0000000..50f0589
 +
 +static int clk_mt6797_mm_probe(struct platform_device *pdev)
 +{
-+	return mtk_mmsys_init(&pdev->dev);
++	struct clk_onecell_data *clk_data;
++	int r;
++	struct device_node *node = pdev->dev.of_node;
++
++	clk_data = mtk_alloc_clk_data(CLK_MM_NR);
++
++	mtk_clk_register_gates(node, mm_clks, ARRAY_SIZE(mm_clks),
++			       clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
++	if (r)
++		dev_err(&pdev->dev,
++			"could not register clock provider: %s: %d\n",
++			pdev->name, r);
++
++	return r;
 +}
 +
 +static struct platform_driver clk_mt6797_mm_drv = {
@@ -476,12 +311,12 @@ index 0000000..50f0589
 +builtin_platform_driver(clk_mt6797_mm_drv);
 diff --git a/drivers/clk/mediatek/clk-mt6797-vdec.c b/drivers/clk/mediatek/clk-mt6797-vdec.c
 new file mode 100644
-index 0000000..5fa02c3
+index 0000000..7c402ca
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt6797-vdec.c
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,93 @@
 +/*
-+ * Copyright (c) 2016 MediaTek Inc.
++ * Copyright (c) 2017 MediaTek Inc.
 + * Author: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -494,7 +329,7 @@ index 0000000..5fa02c3
 + * GNU General Public License for more details.
 + */
 +
-+#include <linux/clk.h>
++#include <linux/clk-provider.h>
 +#include <linux/platform_device.h>
 +
 +#include "clk-mtk.h"
@@ -539,30 +374,6 @@ index 0000000..5fa02c3
 +	GATE_VDEC1(CLK_VDEC_LARB1_CKEN, "vdec_larb1_cken", "mm_sel", 0),
 +};
 +
-+static int mtk_vdecsys_init(struct device *dev)
-+{
-+	struct clk_onecell_data *clk_data;
-+	int r;
-+
-+	clk_data = mtk_alloc_clk_data(CLK_VDEC_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
-+
-+	mtk_clk_register_gates(dev->of_node, vdec_clks, ARRAY_SIZE(vdec_clks),
-+			       clk_data);
-+
-+	r = of_clk_add_provider(dev->of_node, of_clk_src_onecell_get, clk_data);
-+	if (r)
-+		pr_err("%s: could not register clock provider: %d\n",
-+		       __func__, r);
-+	return r;
-+
-+alloc_err:
-+	return -ENOMEM;
-+}
-+
 +static const struct of_device_id of_match_clk_mt6797_vdec[] = {
 +	{ .compatible = "mediatek,mt6797-vdecsys", },
 +	{}
@@ -570,7 +381,22 @@ index 0000000..5fa02c3
 +
 +static int clk_mt6797_vdec_probe(struct platform_device *pdev)
 +{
-+	return mtk_vdecsys_init(&pdev->dev);
++	struct clk_onecell_data *clk_data;
++	int r;
++	struct device_node *node = pdev->dev.of_node;
++
++	clk_data = mtk_alloc_clk_data(CLK_VDEC_NR);
++
++	mtk_clk_register_gates(node, vdec_clks, ARRAY_SIZE(vdec_clks),
++			       clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
++	if (r)
++		dev_err(&pdev->dev,
++			"could not register clock provider: %s: %d\n",
++			pdev->name, r);
++
++	return r;
 +}
 +
 +static struct platform_driver clk_mt6797_vdec_drv = {
@@ -584,12 +410,12 @@ index 0000000..5fa02c3
 +builtin_platform_driver(clk_mt6797_vdec_drv);
 diff --git a/drivers/clk/mediatek/clk-mt6797-venc.c b/drivers/clk/mediatek/clk-mt6797-venc.c
 new file mode 100644
-index 0000000..7486ddb
+index 0000000..e73d517
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt6797-venc.c
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,78 @@
 +/*
-+ * Copyright (c) 2016 MediaTek Inc.
++ * Copyright (c) 2017 MediaTek Inc.
 + * Author: Kevin Chen <kevin-cw.chen@mediatek.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -602,7 +428,7 @@ index 0000000..7486ddb
 + * GNU General Public License for more details.
 + */
 +
-+#include <linux/clk.h>
++#include <linux/clk-provider.h>
 +#include <linux/platform_device.h>
 +
 +#include "clk-mtk.h"
@@ -632,29 +458,6 @@ index 0000000..7486ddb
 +	GATE_VENC(CLK_VENC_3, "venc_3", "venc_sel", 12),
 +};
 +
-+static int mtk_vencsys_init(struct device_node *node)
-+{
-+	struct clk_onecell_data *clk_data;
-+	int r;
-+
-+	clk_data = mtk_alloc_clk_data(CLK_VENC_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
-+
-+	mtk_clk_register_gates(node, venc_clks, ARRAY_SIZE(venc_clks),
-+			       clk_data);
-+
-+	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
-+	if (r)
-+		pr_err("%s: could not register clock provider: %d\n",
-+		       __func__, r);
-+	return r;
-+alloc_err:
-+	return -ENOMEM;
-+}
-+
 +static const struct of_device_id of_match_clk_mt6797_venc[] = {
 +	{ .compatible = "mediatek,mt6797-vencsys", },
 +	{}
@@ -662,7 +465,22 @@ index 0000000..7486ddb
 +
 +static int clk_mt6797_venc_probe(struct platform_device *pdev)
 +{
-+	return mtk_vencsys_init(pdev->dev.of_node);
++	struct clk_onecell_data *clk_data;
++	int r;
++	struct device_node *node = pdev->dev.of_node;
++
++	clk_data = mtk_alloc_clk_data(CLK_VENC_NR);
++
++	mtk_clk_register_gates(node, venc_clks, ARRAY_SIZE(venc_clks),
++			       clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
++	if (r)
++		dev_err(&pdev->dev,
++			"could not register clock provider: %s: %d\n",
++			pdev->name, r);
++
++	return r;
 +}
 +
 +static struct platform_driver clk_mt6797_venc_drv = {
@@ -676,7 +494,7 @@ index 0000000..7486ddb
 +builtin_platform_driver(clk_mt6797_venc_drv);
 diff --git a/drivers/clk/mediatek/clk-mt6797.c b/drivers/clk/mediatek/clk-mt6797.c
 new file mode 100644
-index 0000000..a851d0ff
+index 0000000..7ebb7f1
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt6797.c
 @@ -0,0 +1,716 @@
@@ -713,7 +531,7 @@ index 0000000..a851d0ff
 +
 +static DEFINE_SPINLOCK(mt6797_clk_lock);
 +
-+static const struct mtk_fixed_factor top_divs[] = {
++static const struct mtk_fixed_factor top_fixed_divs[] = {
 +	FACTOR(CLK_TOP_SYSPLL_CK, "syspll_ck", "mainpll", 1, 1),
 +	FACTOR(CLK_TOP_SYSPLL_D2, "syspll_d2", "mainpll", 1, 2),
 +	FACTOR(CLK_TOP_SYSPLL1_D2, "syspll1_d2", "syspll_d2", 1, 2),
@@ -1008,17 +826,16 @@ index 0000000..a851d0ff
 +};
 +
 +static const struct mtk_composite top_muxes[] = {
-+	MUX_GATE(CLK_TOP_MUX_ULPOSC_AXI_CK_MUX_PRE, "ulposc_axi_ck_mux_pre",
-+		 ulposc_axi_ck_mux_pre_parents, 0x0040, 3, 1,
-+		 INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_ULPOSC_AXI_CK_MUX, "ulposc_axi_ck_mux",
-+		 ulposc_axi_ck_mux_parents, 0x0040, 2, 1, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_AXI, "axi_sel", axi_parents,
-+		 0x0040, 0, 2, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_DDRPHYCFG, "ddrphycfg_sel", ddrphycfg_parents,
-+		 0x0040, 16, 2, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_MM, "mm_sel", mm_parents,
-+		 0x0040, 24, 2, INVALID_MUX_GATE_BIT),
++	MUX(CLK_TOP_MUX_ULPOSC_AXI_CK_MUX_PRE, "ulposc_axi_ck_mux_pre",
++	    ulposc_axi_ck_mux_pre_parents, 0x0040, 3, 1),
++	MUX(CLK_TOP_MUX_ULPOSC_AXI_CK_MUX, "ulposc_axi_ck_mux",
++	    ulposc_axi_ck_mux_parents, 0x0040, 2, 1),
++	MUX(CLK_TOP_MUX_AXI, "axi_sel", axi_parents,
++	    0x0040, 0, 2),
++	MUX(CLK_TOP_MUX_DDRPHYCFG, "ddrphycfg_sel", ddrphycfg_parents,
++	    0x0040, 16, 2),
++	MUX(CLK_TOP_MUX_MM, "mm_sel", mm_parents,
++	    0x0040, 24, 2),
 +	MUX_GATE(CLK_TOP_MUX_PWM, "pwm_sel", pwm_parents, 0x0050, 0, 3, 7),
 +	MUX_GATE(CLK_TOP_MUX_VDEC, "vdec_sel", vdec_parents, 0x0050, 8, 3, 15),
 +	MUX_GATE(CLK_TOP_MUX_VENC, "venc_sel", venc_parents, 0x0050, 16, 2, 23),
@@ -1026,13 +843,12 @@ index 0000000..a851d0ff
 +	MUX_GATE(CLK_TOP_MUX_CAMTG, "camtg_sel", camtg, 0x0060, 0, 2, 7),
 +	MUX_GATE(CLK_TOP_MUX_UART, "uart_sel", uart_parents, 0x0060, 8, 1, 15),
 +	MUX_GATE(CLK_TOP_MUX_SPI, "spi_sel", spi_parents, 0x0060, 16, 2, 23),
-+	MUX_GATE(CLK_TOP_MUX_ULPOSC_SPI_CK_MUX, "ulposc_spi_ck_mux",
-+		 ulposc_spi_ck_mux_parents, 0x0060, 18, 1,
-+		 INVALID_MUX_GATE_BIT),
++	MUX(CLK_TOP_MUX_ULPOSC_SPI_CK_MUX, "ulposc_spi_ck_mux",
++	    ulposc_spi_ck_mux_parents, 0x0060, 18, 1),
 +	MUX_GATE(CLK_TOP_MUX_USB20, "usb20_sel", usb20_parents,
 +		 0x0060, 24, 2, 31),
-+	MUX_GATE(CLK_TOP_MUX_MSDC50_0_HCLK, "msdc50_0_hclk_sel",
-+		 msdc50_0_hclk_parents, 0x0070, 8, 2, INVALID_MUX_GATE_BIT),
++	MUX(CLK_TOP_MUX_MSDC50_0_HCLK, "msdc50_0_hclk_sel",
++	    msdc50_0_hclk_parents, 0x0070, 8, 2),
 +	MUX_GATE(CLK_TOP_MUX_MSDC50_0, "msdc50_0_sel", msdc50_0_parents,
 +		 0x0070, 16, 4, 23),
 +	MUX_GATE(CLK_TOP_MUX_MSDC30_1, "msdc30_1_sel", msdc30_1_parents,
@@ -1041,33 +857,55 @@ index 0000000..a851d0ff
 +		 0x0080, 0, 3, 7),
 +	MUX_GATE(CLK_TOP_MUX_AUDIO, "audio_sel", audio_parents,
 +		 0x0080, 16, 2, 23),
-+	MUX_GATE(CLK_TOP_MUX_AUD_INTBUS, "aud_intbus_sel", aud_intbus_parents,
-+		 0x0080, 24, 2, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_PMICSPI, "pmicspi_sel", pmicspi_parents,
-+		 0x0090, 0, 3, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_SCP, "scp_sel", scp_parents,
-+		 0x0090, 8, 2, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_ATB, "atb_sel", atb_parents,
-+		 0x0090, 16, 2, INVALID_MUX_GATE_BIT),
++	MUX(CLK_TOP_MUX_AUD_INTBUS, "aud_intbus_sel", aud_intbus_parents,
++	    0x0080, 24, 2),
++	MUX(CLK_TOP_MUX_PMICSPI, "pmicspi_sel", pmicspi_parents,
++	    0x0090, 0, 3),
++	MUX(CLK_TOP_MUX_SCP, "scp_sel", scp_parents,
++	    0x0090, 8, 2),
++	MUX(CLK_TOP_MUX_ATB, "atb_sel", atb_parents,
++	    0x0090, 16, 2),
 +	MUX_GATE(CLK_TOP_MUX_MJC, "mjc_sel", mjc_parents, 0x0090, 24, 2, 31),
 +	MUX_GATE(CLK_TOP_MUX_DPI0, "dpi0_sel", dpi0_parents, 0x00A0, 0, 3, 7),
 +	MUX_GATE(CLK_TOP_MUX_AUD_1, "aud_1_sel", aud_1_parents,
 +		 0x00A0, 16, 1, 23),
 +	MUX_GATE(CLK_TOP_MUX_AUD_2, "aud_2_sel", aud_2_parents,
 +		 0x00A0, 24, 1, 31),
-+	MUX_GATE(CLK_TOP_MUX_SSUSB_TOP_SYS, "ssusb_top_sys_sel",
-+		 ssusb_top_sys_parents, 0x00B0, 8, 1, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_SPM, "spm_sel", spm_parents,
-+		 0x00C0, 0, 1, INVALID_MUX_GATE_BIT),
-+	MUX_GATE(CLK_TOP_MUX_BSI_SPI, "bsi_spi_sel", bsi_spi_parents,
-+		 0x00C0, 8, 2, INVALID_MUX_GATE_BIT),
++	MUX(CLK_TOP_MUX_SSUSB_TOP_SYS, "ssusb_top_sys_sel",
++	    ssusb_top_sys_parents, 0x00B0, 8, 1),
++	MUX(CLK_TOP_MUX_SPM, "spm_sel", spm_parents,
++	    0x00C0, 0, 1),
++	MUX(CLK_TOP_MUX_BSI_SPI, "bsi_spi_sel", bsi_spi_parents,
++	    0x00C0, 8, 2),
 +	MUX_GATE(CLK_TOP_MUX_AUDIO_H, "audio_h_sel", audio_h_parents,
 +		 0x00C0, 16, 2, 23),
 +	MUX_GATE(CLK_TOP_MUX_ANC_MD32, "anc_md32_sel", anc_md32_parents,
 +		 0x00C0, 24, 2, 31),
-+	MUX_GATE(CLK_TOP_MUX_MFG_52M, "mfg_52m_sel", mfg_52m_parents,
-+		 0x0104, 1, 2, INVALID_MUX_GATE_BIT),
++	MUX(CLK_TOP_MUX_MFG_52M, "mfg_52m_sel", mfg_52m_parents,
++	    0x0104, 1, 2),
 +};
++
++static int mtk_topckgen_init(struct platform_device *pdev)
++{
++	struct clk_onecell_data *clk_data;
++	void __iomem *base;
++	struct device_node *node = pdev->dev.of_node;
++	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	clk_data = mtk_alloc_clk_data(CLK_TOP_NR);
++
++	mtk_clk_register_factors(top_fixed_divs, ARRAY_SIZE(top_fixed_divs),
++				 clk_data);
++
++	mtk_clk_register_composites(top_muxes, ARRAY_SIZE(top_muxes), base,
++				    &mt6797_clk_lock, clk_data);
++
++	return of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
++}
 +
 +static const struct mtk_gate_regs infra0_cg_regs = {
 +	.set_ofs = 0x0080,
@@ -1114,7 +952,7 @@ index 0000000..a851d0ff
 +	.ops = &mtk_clk_gate_ops_setclr,		\
 +}
 +
-+static const struct mtk_gate infra_gates[] = {
++static const struct mtk_gate infra_clks[] = {
 +	GATE_ICG0(CLK_INFRA_PMIC_TMR, "infra_pmic_tmr", "ulposc", 0),
 +	GATE_ICG0(CLK_INFRA_PMIC_AP, "infra_pmic_ap", "pmicspi_sel", 1),
 +	GATE_ICG0(CLK_INFRA_PMIC_MD, "infra_pmic_md", "pmicspi_sel", 2),
@@ -1205,9 +1043,60 @@ index 0000000..a851d0ff
 +	GATE_ICG1(CLK_INFRA_MFG_VCG, "infra_mfg_vcg", "mfg_52m_sel", 14),
 +};
 +
-+static const struct mtk_fixed_factor infra_divs[] = {
++static const struct mtk_fixed_factor infra_fixed_divs[] = {
 +	FACTOR(CLK_INFRA_13M, "clk13m", "clk26m", 1, 2),
 +};
++
++static struct clk_onecell_data *infra_clk_data;
++
++static void mtk_infrasys_init_early(struct device_node *node)
++{
++	int r, i;
++
++	if (!infra_clk_data) {
++		infra_clk_data = mtk_alloc_clk_data(CLK_INFRA_NR);
++
++		for (i = 0; i < CLK_INFRA_NR; i++)
++			infra_clk_data->clks[i] = ERR_PTR(-EPROBE_DEFER);
++	}
++
++	mtk_clk_register_factors(infra_fixed_divs, ARRAY_SIZE(infra_fixed_divs),
++				 infra_clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, infra_clk_data);
++	if (r)
++		pr_err("%s(): could not register clock provider: %d\n",
++		       __func__, r);
++}
++
++CLK_OF_DECLARE_DRIVER(mtk_infra, "mediatek,mt6797-infracfg",
++		      mtk_infrasys_init_early);
++
++static int mtk_infrasys_init(struct platform_device *pdev)
++{
++	int r, i;
++	struct device_node *node = pdev->dev.of_node;
++
++	if (!infra_clk_data) {
++		infra_clk_data = mtk_alloc_clk_data(CLK_INFRA_NR);
++	} else {
++		for (i = 0; i < CLK_INFRA_NR; i++) {
++			if (infra_clk_data->clks[i] == ERR_PTR(-EPROBE_DEFER))
++				infra_clk_data->clks[i] = ERR_PTR(-ENOENT);
++		}
++	}
++
++	mtk_clk_register_gates(node, infra_clks, ARRAY_SIZE(infra_clks),
++			       infra_clk_data);
++	mtk_clk_register_factors(infra_fixed_divs, ARRAY_SIZE(infra_fixed_divs),
++				 infra_clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, infra_clk_data);
++	if (r)
++		return r;
++
++	return 0;
++}
 +
 +#define MT6797_PLL_FMAX		(3000UL * MHZ)
 +
@@ -1241,8 +1130,8 @@ index 0000000..a851d0ff
 +			NULL)
 +
 +static const struct mtk_pll_data plls[] = {
-+	PLL(CLK_APMIXED_MAINPLL, "mainpll", 0x0220, 0x022C, 0xF0000101, 0, 21,
-+	    0x220, 4, 0x0, 0x224, 0),
++	PLL(CLK_APMIXED_MAINPLL, "mainpll", 0x0220, 0x022C, 0xF0000101, PLL_AO,
++	    21, 0x220, 4, 0x0, 0x224, 0),
 +	PLL(CLK_APMIXED_UNIVPLL, "univpll", 0x0230, 0x023C, 0xFE000011, 0, 7,
 +	    0x230, 4, 0x0, 0x234, 14),
 +	PLL(CLK_APMIXED_MFGPLL, "mfgpll", 0x0240, 0x024C, 0x00000101, 0, 21,
@@ -1263,78 +1152,18 @@ index 0000000..a851d0ff
 +	    0x2B4, 4, 0x2BC, 0x2B8, 0),
 +};
 +
-+static struct clk_onecell_data * __init mtk_topckgen_init(struct device *dev)
++static int mtk_apmixedsys_init(struct platform_device *pdev)
 +{
 +	struct clk_onecell_data *clk_data;
-+	struct resource mem;
-+	void __iomem *base;
-+
-+	if (of_address_to_resource(dev->of_node, 0, &mem)) {
-+		pr_err("%s: get resource failed\n", __func__);
-+		goto res_err;
-+	}
-+
-+	base = devm_ioremap(dev, mem.start, resource_size(&mem));
-+	if (!base) {
-+		pr_err("%s: ioremap failed\n", __func__);
-+		goto ioremap_err;
-+	}
-+
-+	clk_data = mtk_alloc_clk_data(CLK_TOP_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
-+
-+	mtk_clk_register_factors(top_divs, ARRAY_SIZE(top_divs), clk_data);
-+	mtk_clk_register_composites(top_muxes, ARRAY_SIZE(top_muxes), base,
-+				    &mt6797_clk_lock, clk_data);
-+
-+	return clk_data;
-+
-+alloc_err:
-+	devm_iounmap(dev, base);
-+res_err:
-+ioremap_err:
-+	return NULL;
-+}
-+
-+static struct clk_onecell_data * __init mtk_infrasys_init(struct device *dev)
-+{
-+	struct clk_onecell_data *clk_data;
-+
-+	clk_data = mtk_alloc_clk_data(CLK_INFRA_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
-+
-+	mtk_clk_register_gates(dev->of_node, infra_gates,
-+			       ARRAY_SIZE(infra_gates), clk_data);
-+	mtk_clk_register_factors(infra_divs, ARRAY_SIZE(infra_divs), clk_data);
-+
-+	return clk_data;
-+
-+alloc_err:
-+	return NULL;
-+}
-+
-+static struct clk_onecell_data * __init mtk_apmixedsys_init(struct device *dev)
-+{
-+	struct clk_onecell_data *clk_data;
++	struct device_node *node = pdev->dev.of_node;
 +
 +	clk_data = mtk_alloc_clk_data(CLK_APMIXED_NR);
-+	if (!clk_data) {
-+		pr_err("%s: alloc failed\n", __func__);
-+		goto alloc_err;
-+	}
++	if (!clk_data)
++		return -ENOMEM;
 +
-+	mtk_clk_register_plls(dev->of_node, plls, ARRAY_SIZE(plls), clk_data);
++	mtk_clk_register_plls(node, plls, ARRAY_SIZE(plls), clk_data);
 +
-+	return clk_data;
-+
-+alloc_err:
-+	return NULL;
++	return of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
 +}
 +
 +static const struct of_device_id of_match_clk_mt6797[] = {
@@ -1354,31 +1183,20 @@ index 0000000..a851d0ff
 +
 +static int clk_mt6797_probe(struct platform_device *pdev)
 +{
-+	struct clk_onecell_data * (*clk_init)(struct device *);
-+	struct clk_onecell_data *clk_data;
++	int (*clk_init)(struct platform_device *);
 +	int r;
 +
 +	clk_init = of_device_get_match_data(&pdev->dev);
-+	if (!clk_init) {
-+		pr_err("%s: matched clk not found\n", __func__);
++	if (!clk_init)
 +		return -EINVAL;
-+	}
 +
-+	clk_data = clk_init(&pdev->dev);
-+	if (!clk_data) {
-+		pr_err("%s: clk init failed\n", __func__);
-+		return -EINVAL;
-+	}
++	r = clk_init(pdev);
++	if (r)
++		dev_err(&pdev->dev,
++			"could not register clock provider: %s: %d\n",
++			pdev->name, r);
 +
-+	r = of_clk_add_provider(pdev->dev.of_node, of_clk_src_onecell_get,
-+				clk_data);
-+	if (r) {
-+		pr_err("%s: could not register clock provider: %d\n",
-+		       __func__, r);
-+		return r;
-+	}
-+
-+	return 0;
++	return r;
 +}
 +
 +static struct platform_driver clk_mt6797_drv = {
@@ -1398,291 +1216,291 @@ index 0000000..a851d0ff
 +arch_initcall(clk_mt6797_init);
 diff --git a/include/dt-bindings/clock/mt6797-clk.h b/include/dt-bindings/clock/mt6797-clk.h
 new file mode 100644
-index 0000000..6f32e6b
+index 0000000..e48aa47
 --- /dev/null
 +++ b/include/dt-bindings/clock/mt6797-clk.h
 @@ -0,0 +1,281 @@
 +/*
-+* Copyright (c) 2016 MediaTek Inc.
-+* Author: Kevin Chen <kevin-cw.chen@mediatek.com>
-+*
-+* This program is free software; you can redistribute it and/or modify
-+* it under the terms of the GNU General Public License version 2 as
-+* published by the Free Software Foundation.
-+*
-+* This program is distributed in the hope that it will be useful,
-+* but WITHOUT ANY WARRANTY; without even the implied warranty of
-+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+* GNU General Public License for more details.
-+*/
++ * Copyright (c) 2017 MediaTek Inc.
++ * Author: Kevin Chen <kevin-cw.chen@mediatek.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
 +
 +#ifndef _DT_BINDINGS_CLK_MT6797_H
 +#define _DT_BINDINGS_CLK_MT6797_H
 +
 +/* TOPCKGEN */
 +#define	CLK_TOP_MUX_ULPOSC_AXI_CK_MUX_PRE	1
-+#define	CLK_TOP_MUX_ULPOSC_AXI_CK_MUX	2
-+#define	CLK_TOP_MUX_AXI	3
-+#define	CLK_TOP_MUX_MEM	4
-+#define	CLK_TOP_MUX_DDRPHYCFG	5
-+#define	CLK_TOP_MUX_MM	6
-+#define	CLK_TOP_MUX_PWM	7
-+#define	CLK_TOP_MUX_VDEC	8
-+#define	CLK_TOP_MUX_VENC	9
-+#define	CLK_TOP_MUX_MFG	10
-+#define	CLK_TOP_MUX_CAMTG	11
-+#define	CLK_TOP_MUX_UART	12
-+#define	CLK_TOP_MUX_SPI	13
-+#define	CLK_TOP_MUX_ULPOSC_SPI_CK_MUX	14
-+#define	CLK_TOP_MUX_USB20	15
-+#define	CLK_TOP_MUX_MSDC50_0_HCLK	16
-+#define	CLK_TOP_MUX_MSDC50_0	17
-+#define	CLK_TOP_MUX_MSDC30_1	18
-+#define	CLK_TOP_MUX_MSDC30_2	19
-+#define	CLK_TOP_MUX_AUDIO	20
-+#define	CLK_TOP_MUX_AUD_INTBUS	21
-+#define	CLK_TOP_MUX_PMICSPI	22
-+#define	CLK_TOP_MUX_SCP	23
-+#define	CLK_TOP_MUX_ATB	24
-+#define	CLK_TOP_MUX_MJC	25
-+#define	CLK_TOP_MUX_DPI0	26
-+#define	CLK_TOP_MUX_AUD_1	27
-+#define	CLK_TOP_MUX_AUD_2	28
-+#define	CLK_TOP_MUX_SSUSB_TOP_SYS	29
-+#define	CLK_TOP_MUX_SPM	30
-+#define	CLK_TOP_MUX_BSI_SPI	31
-+#define	CLK_TOP_MUX_AUDIO_H	32
-+#define	CLK_TOP_MUX_ANC_MD32	33
-+#define	CLK_TOP_MUX_MFG_52M	34
-+#define	CLK_TOP_SYSPLL_CK	35
-+#define	CLK_TOP_SYSPLL_D2	36
-+#define	CLK_TOP_SYSPLL1_D2	37
-+#define	CLK_TOP_SYSPLL1_D4	38
-+#define	CLK_TOP_SYSPLL1_D8	39
-+#define	CLK_TOP_SYSPLL1_D16	40
-+#define	CLK_TOP_SYSPLL_D3	41
-+#define	CLK_TOP_SYSPLL_D3_D3	42
-+#define	CLK_TOP_SYSPLL2_D2	43
-+#define	CLK_TOP_SYSPLL2_D4	44
-+#define	CLK_TOP_SYSPLL2_D8	45
-+#define	CLK_TOP_SYSPLL_D5	46
-+#define	CLK_TOP_SYSPLL3_D2	47
-+#define	CLK_TOP_SYSPLL3_D4	48
-+#define	CLK_TOP_SYSPLL_D7	49
-+#define	CLK_TOP_SYSPLL4_D2	50
-+#define	CLK_TOP_SYSPLL4_D4	51
-+#define	CLK_TOP_UNIVPLL_CK	52
-+#define	CLK_TOP_UNIVPLL_D7	53
-+#define	CLK_TOP_UNIVPLL_D26	54
-+#define	CLK_TOP_SSUSB_PHY_48M_CK	55
-+#define	CLK_TOP_USB_PHY48M_CK	56
-+#define	CLK_TOP_UNIVPLL_D2	57
-+#define	CLK_TOP_UNIVPLL1_D2	58
-+#define	CLK_TOP_UNIVPLL1_D4	59
-+#define	CLK_TOP_UNIVPLL1_D8	60
-+#define	CLK_TOP_UNIVPLL_D3	61
-+#define	CLK_TOP_UNIVPLL2_D2	62
-+#define	CLK_TOP_UNIVPLL2_D4	63
-+#define	CLK_TOP_UNIVPLL2_D8	64
-+#define	CLK_TOP_UNIVPLL_D5	65
-+#define	CLK_TOP_UNIVPLL3_D2	66
-+#define	CLK_TOP_UNIVPLL3_D4	67
-+#define	CLK_TOP_UNIVPLL3_D8	68
-+#define	CLK_TOP_ULPOSC_CK_ORG	69
-+#define	CLK_TOP_ULPOSC_CK	70
-+#define	CLK_TOP_ULPOSC_D2	71
-+#define	CLK_TOP_ULPOSC_D3	72
-+#define	CLK_TOP_ULPOSC_D4	73
-+#define	CLK_TOP_ULPOSC_D8	74
-+#define	CLK_TOP_ULPOSC_D10	75
-+#define	CLK_TOP_APLL1_CK	76
-+#define	CLK_TOP_APLL2_CK	77
-+#define	CLK_TOP_MFGPLL_CK	78
-+#define	CLK_TOP_MFGPLL_D2	79
-+#define	CLK_TOP_IMGPLL_CK	80
-+#define	CLK_TOP_IMGPLL_D2	81
-+#define	CLK_TOP_IMGPLL_D4	82
-+#define	CLK_TOP_CODECPLL_CK	83
-+#define	CLK_TOP_CODECPLL_D2	84
-+#define	CLK_TOP_VDECPLL_CK	85
-+#define	CLK_TOP_TVDPLL_CK	86
-+#define	CLK_TOP_TVDPLL_D2	87
-+#define	CLK_TOP_TVDPLL_D4	88
-+#define	CLK_TOP_TVDPLL_D8	89
-+#define	CLK_TOP_TVDPLL_D16	90
-+#define	CLK_TOP_MSDCPLL_CK	91
-+#define	CLK_TOP_MSDCPLL_D2	92
-+#define	CLK_TOP_MSDCPLL_D4	93
-+#define	CLK_TOP_MSDCPLL_D8	94
-+#define CLK_TOP_NR		95
++#define	CLK_TOP_MUX_ULPOSC_AXI_CK_MUX		2
++#define	CLK_TOP_MUX_AXI				3
++#define	CLK_TOP_MUX_MEM				4
++#define	CLK_TOP_MUX_DDRPHYCFG			5
++#define	CLK_TOP_MUX_MM				6
++#define	CLK_TOP_MUX_PWM				7
++#define	CLK_TOP_MUX_VDEC			8
++#define	CLK_TOP_MUX_VENC			9
++#define	CLK_TOP_MUX_MFG				10
++#define	CLK_TOP_MUX_CAMTG			11
++#define	CLK_TOP_MUX_UART			12
++#define	CLK_TOP_MUX_SPI				13
++#define	CLK_TOP_MUX_ULPOSC_SPI_CK_MUX		14
++#define	CLK_TOP_MUX_USB20			15
++#define	CLK_TOP_MUX_MSDC50_0_HCLK		16
++#define	CLK_TOP_MUX_MSDC50_0			17
++#define	CLK_TOP_MUX_MSDC30_1			18
++#define	CLK_TOP_MUX_MSDC30_2			19
++#define	CLK_TOP_MUX_AUDIO			20
++#define	CLK_TOP_MUX_AUD_INTBUS			21
++#define	CLK_TOP_MUX_PMICSPI			22
++#define	CLK_TOP_MUX_SCP				23
++#define	CLK_TOP_MUX_ATB				24
++#define	CLK_TOP_MUX_MJC				25
++#define	CLK_TOP_MUX_DPI0			26
++#define	CLK_TOP_MUX_AUD_1			27
++#define	CLK_TOP_MUX_AUD_2			28
++#define	CLK_TOP_MUX_SSUSB_TOP_SYS		29
++#define	CLK_TOP_MUX_SPM				30
++#define	CLK_TOP_MUX_BSI_SPI			31
++#define	CLK_TOP_MUX_AUDIO_H			32
++#define	CLK_TOP_MUX_ANC_MD32			33
++#define	CLK_TOP_MUX_MFG_52M			34
++#define	CLK_TOP_SYSPLL_CK			35
++#define	CLK_TOP_SYSPLL_D2			36
++#define	CLK_TOP_SYSPLL1_D2			37
++#define	CLK_TOP_SYSPLL1_D4			38
++#define	CLK_TOP_SYSPLL1_D8			39
++#define	CLK_TOP_SYSPLL1_D16			40
++#define	CLK_TOP_SYSPLL_D3			41
++#define	CLK_TOP_SYSPLL_D3_D3			42
++#define	CLK_TOP_SYSPLL2_D2			43
++#define	CLK_TOP_SYSPLL2_D4			44
++#define	CLK_TOP_SYSPLL2_D8			45
++#define	CLK_TOP_SYSPLL_D5			46
++#define	CLK_TOP_SYSPLL3_D2			47
++#define	CLK_TOP_SYSPLL3_D4			48
++#define	CLK_TOP_SYSPLL_D7			49
++#define	CLK_TOP_SYSPLL4_D2			50
++#define	CLK_TOP_SYSPLL4_D4			51
++#define	CLK_TOP_UNIVPLL_CK			52
++#define	CLK_TOP_UNIVPLL_D7			53
++#define	CLK_TOP_UNIVPLL_D26			54
++#define	CLK_TOP_SSUSB_PHY_48M_CK		55
++#define	CLK_TOP_USB_PHY48M_CK			56
++#define	CLK_TOP_UNIVPLL_D2			57
++#define	CLK_TOP_UNIVPLL1_D2			58
++#define	CLK_TOP_UNIVPLL1_D4			59
++#define	CLK_TOP_UNIVPLL1_D8			60
++#define	CLK_TOP_UNIVPLL_D3			61
++#define	CLK_TOP_UNIVPLL2_D2			62
++#define	CLK_TOP_UNIVPLL2_D4			63
++#define	CLK_TOP_UNIVPLL2_D8			64
++#define	CLK_TOP_UNIVPLL_D5			65
++#define	CLK_TOP_UNIVPLL3_D2			66
++#define	CLK_TOP_UNIVPLL3_D4			67
++#define	CLK_TOP_UNIVPLL3_D8			68
++#define	CLK_TOP_ULPOSC_CK_ORG			69
++#define	CLK_TOP_ULPOSC_CK			70
++#define	CLK_TOP_ULPOSC_D2			71
++#define	CLK_TOP_ULPOSC_D3			72
++#define	CLK_TOP_ULPOSC_D4			73
++#define	CLK_TOP_ULPOSC_D8			74
++#define	CLK_TOP_ULPOSC_D10			75
++#define	CLK_TOP_APLL1_CK			76
++#define	CLK_TOP_APLL2_CK			77
++#define	CLK_TOP_MFGPLL_CK			78
++#define	CLK_TOP_MFGPLL_D2			79
++#define	CLK_TOP_IMGPLL_CK			80
++#define	CLK_TOP_IMGPLL_D2			81
++#define	CLK_TOP_IMGPLL_D4			82
++#define	CLK_TOP_CODECPLL_CK			83
++#define	CLK_TOP_CODECPLL_D2			84
++#define	CLK_TOP_VDECPLL_CK			85
++#define	CLK_TOP_TVDPLL_CK			86
++#define	CLK_TOP_TVDPLL_D2			87
++#define	CLK_TOP_TVDPLL_D4			88
++#define	CLK_TOP_TVDPLL_D8			89
++#define	CLK_TOP_TVDPLL_D16			90
++#define	CLK_TOP_MSDCPLL_CK			91
++#define	CLK_TOP_MSDCPLL_D2			92
++#define	CLK_TOP_MSDCPLL_D4			93
++#define	CLK_TOP_MSDCPLL_D8			94
++#define CLK_TOP_NR				95
 +
 +/* APMIXED_SYS */
-+#define CLK_APMIXED_MAINPLL	1
-+#define CLK_APMIXED_UNIVPLL 2
-+#define CLK_APMIXED_MFGPLL	3
-+#define CLK_APMIXED_MSDCPLL	4
-+#define CLK_APMIXED_IMGPLL	5
-+#define CLK_APMIXED_TVDPLL	6
-+#define CLK_APMIXED_CODECPLL	7
-+#define CLK_APMIXED_VDECPLL	8
-+#define CLK_APMIXED_APLL1	9
-+#define CLK_APMIXED_APLL2	10
-+#define CLK_APMIXED_NR	11
++#define CLK_APMIXED_MAINPLL			1
++#define CLK_APMIXED_UNIVPLL			2
++#define CLK_APMIXED_MFGPLL			3
++#define CLK_APMIXED_MSDCPLL			4
++#define CLK_APMIXED_IMGPLL			5
++#define CLK_APMIXED_TVDPLL			6
++#define CLK_APMIXED_CODECPLL			7
++#define CLK_APMIXED_VDECPLL			8
++#define CLK_APMIXED_APLL1			9
++#define CLK_APMIXED_APLL2			10
++#define CLK_APMIXED_NR				11
 +
 +/* INFRA_SYS */
-+#define	CLK_INFRA_PMIC_TMR	1
-+#define	CLK_INFRA_PMIC_AP	2
-+#define	CLK_INFRA_PMIC_MD	3
-+#define	CLK_INFRA_PMIC_CONN	4
-+#define	CLK_INFRA_SCP	5
-+#define	CLK_INFRA_SEJ	6
-+#define	CLK_INFRA_APXGPT	7
-+#define	CLK_INFRA_SEJ_13M	8
-+#define	CLK_INFRA_ICUSB	9
-+#define	CLK_INFRA_GCE	10
-+#define	CLK_INFRA_THERM	11
-+#define	CLK_INFRA_I2C0	12
-+#define	CLK_INFRA_I2C1	13
-+#define	CLK_INFRA_I2C2	14
-+#define	CLK_INFRA_I2C3	15
-+#define	CLK_INFRA_PWM_HCLK	16
-+#define	CLK_INFRA_PWM1	17
-+#define	CLK_INFRA_PWM2	18
-+#define	CLK_INFRA_PWM3	19
-+#define	CLK_INFRA_PWM4	20
-+#define	CLK_INFRA_PWM	21
-+#define	CLK_INFRA_UART0	22
-+#define	CLK_INFRA_UART1	23
-+#define	CLK_INFRA_UART2	24
-+#define	CLK_INFRA_UART3	25
-+#define	CLK_INFRA_MD2MD_CCIF_0	26
-+#define	CLK_INFRA_MD2MD_CCIF_1	27
-+#define	CLK_INFRA_MD2MD_CCIF_2	28
-+#define	CLK_INFRA_FHCTL	29
-+#define	CLK_INFRA_BTIF	30
-+#define	CLK_INFRA_MD2MD_CCIF_3	31
-+#define	CLK_INFRA_SPI	32
-+#define	CLK_INFRA_MSDC0	33
-+#define	CLK_INFRA_MD2MD_CCIF_4	34
-+#define	CLK_INFRA_MSDC1	35
-+#define	CLK_INFRA_MSDC2	36
-+#define	CLK_INFRA_MD2MD_CCIF_5	37
-+#define	CLK_INFRA_GCPU	38
-+#define	CLK_INFRA_TRNG	39
-+#define	CLK_INFRA_AUXADC	40
-+#define	CLK_INFRA_CPUM	41
-+#define	CLK_INFRA_AP_C2K_CCIF_0	42
-+#define	CLK_INFRA_AP_C2K_CCIF_1	43
-+#define	CLK_INFRA_CLDMA	44
-+#define	CLK_INFRA_DISP_PWM	45
-+#define	CLK_INFRA_AP_DMA	46
-+#define	CLK_INFRA_DEVICE_APC	47
-+#define	CLK_INFRA_L2C_SRAM	48
-+#define	CLK_INFRA_CCIF_AP	49
-+#define	CLK_INFRA_AUDIO	50
-+#define	CLK_INFRA_CCIF_MD	51
-+#define	CLK_INFRA_DRAMC_F26M	52
-+#define	CLK_INFRA_I2C4	53
-+#define	CLK_INFRA_I2C_APPM	54
-+#define	CLK_INFRA_I2C_GPUPM	55
-+#define	CLK_INFRA_I2C2_IMM	56
-+#define	CLK_INFRA_I2C2_ARB	57
-+#define	CLK_INFRA_I2C3_IMM	58
-+#define	CLK_INFRA_I2C3_ARB	59
-+#define	CLK_INFRA_I2C5	60
-+#define	CLK_INFRA_SYS_CIRQ	61
-+#define	CLK_INFRA_SPI1	62
-+#define	CLK_INFRA_DRAMC_B_F26M	63
-+#define	CLK_INFRA_ANC_MD32	64
-+#define	CLK_INFRA_ANC_MD32_32K	65
-+#define	CLK_INFRA_DVFS_SPM1	66
-+#define	CLK_INFRA_AES_TOP0	67
-+#define	CLK_INFRA_AES_TOP1	68
-+#define	CLK_INFRA_SSUSB_BUS	69
-+#define	CLK_INFRA_SPI2	70
-+#define	CLK_INFRA_SPI3	71
-+#define	CLK_INFRA_SPI4	72
-+#define	CLK_INFRA_SPI5	73
-+#define	CLK_INFRA_IRTX	74
-+#define	CLK_INFRA_SSUSB_SYS	75
-+#define	CLK_INFRA_SSUSB_REF	76
-+#define	CLK_INFRA_AUDIO_26M	77
-+#define	CLK_INFRA_AUDIO_26M_PAD_TOP	78
-+#define	CLK_INFRA_MODEM_TEMP_SHARE	79
-+#define	CLK_INFRA_VAD_WRAP_SOC	80
-+#define	CLK_INFRA_DRAMC_CONF	81
-+#define	CLK_INFRA_DRAMC_B_CONF	82
-+#define CLK_INFRA_MFG_VCG 83
-+#define CLK_INFRA_13M 84
-+#define CLK_INFRA_NR 85
++#define	CLK_INFRA_PMIC_TMR			1
++#define	CLK_INFRA_PMIC_AP			2
++#define	CLK_INFRA_PMIC_MD			3
++#define	CLK_INFRA_PMIC_CONN			4
++#define	CLK_INFRA_SCP				5
++#define	CLK_INFRA_SEJ				6
++#define	CLK_INFRA_APXGPT			7
++#define	CLK_INFRA_SEJ_13M			8
++#define	CLK_INFRA_ICUSB				9
++#define	CLK_INFRA_GCE				10
++#define	CLK_INFRA_THERM				11
++#define	CLK_INFRA_I2C0				12
++#define	CLK_INFRA_I2C1				13
++#define	CLK_INFRA_I2C2				14
++#define	CLK_INFRA_I2C3				15
++#define	CLK_INFRA_PWM_HCLK			16
++#define	CLK_INFRA_PWM1				17
++#define	CLK_INFRA_PWM2				18
++#define	CLK_INFRA_PWM3				19
++#define	CLK_INFRA_PWM4				20
++#define	CLK_INFRA_PWM				21
++#define	CLK_INFRA_UART0				22
++#define	CLK_INFRA_UART1				23
++#define	CLK_INFRA_UART2				24
++#define	CLK_INFRA_UART3				25
++#define	CLK_INFRA_MD2MD_CCIF_0			26
++#define	CLK_INFRA_MD2MD_CCIF_1			27
++#define	CLK_INFRA_MD2MD_CCIF_2			28
++#define	CLK_INFRA_FHCTL				29
++#define	CLK_INFRA_BTIF				30
++#define	CLK_INFRA_MD2MD_CCIF_3			31
++#define	CLK_INFRA_SPI				32
++#define	CLK_INFRA_MSDC0				33
++#define	CLK_INFRA_MD2MD_CCIF_4			34
++#define	CLK_INFRA_MSDC1				35
++#define	CLK_INFRA_MSDC2				36
++#define	CLK_INFRA_MD2MD_CCIF_5			37
++#define	CLK_INFRA_GCPU				38
++#define	CLK_INFRA_TRNG				39
++#define	CLK_INFRA_AUXADC			40
++#define	CLK_INFRA_CPUM				41
++#define	CLK_INFRA_AP_C2K_CCIF_0			42
++#define	CLK_INFRA_AP_C2K_CCIF_1			43
++#define	CLK_INFRA_CLDMA				44
++#define	CLK_INFRA_DISP_PWM			45
++#define	CLK_INFRA_AP_DMA			46
++#define	CLK_INFRA_DEVICE_APC			47
++#define	CLK_INFRA_L2C_SRAM			48
++#define	CLK_INFRA_CCIF_AP			49
++#define	CLK_INFRA_AUDIO				50
++#define	CLK_INFRA_CCIF_MD			51
++#define	CLK_INFRA_DRAMC_F26M			52
++#define	CLK_INFRA_I2C4				53
++#define	CLK_INFRA_I2C_APPM			54
++#define	CLK_INFRA_I2C_GPUPM			55
++#define	CLK_INFRA_I2C2_IMM			56
++#define	CLK_INFRA_I2C2_ARB			57
++#define	CLK_INFRA_I2C3_IMM			58
++#define	CLK_INFRA_I2C3_ARB			59
++#define	CLK_INFRA_I2C5				60
++#define	CLK_INFRA_SYS_CIRQ			61
++#define	CLK_INFRA_SPI1				62
++#define	CLK_INFRA_DRAMC_B_F26M			63
++#define	CLK_INFRA_ANC_MD32			64
++#define	CLK_INFRA_ANC_MD32_32K			65
++#define	CLK_INFRA_DVFS_SPM1			66
++#define	CLK_INFRA_AES_TOP0			67
++#define	CLK_INFRA_AES_TOP1			68
++#define	CLK_INFRA_SSUSB_BUS			69
++#define	CLK_INFRA_SPI2				70
++#define	CLK_INFRA_SPI3				71
++#define	CLK_INFRA_SPI4				72
++#define	CLK_INFRA_SPI5				73
++#define	CLK_INFRA_IRTX				74
++#define	CLK_INFRA_SSUSB_SYS			75
++#define	CLK_INFRA_SSUSB_REF			76
++#define	CLK_INFRA_AUDIO_26M			77
++#define	CLK_INFRA_AUDIO_26M_PAD_TOP		78
++#define	CLK_INFRA_MODEM_TEMP_SHARE		79
++#define	CLK_INFRA_VAD_WRAP_SOC			80
++#define	CLK_INFRA_DRAMC_CONF			81
++#define	CLK_INFRA_DRAMC_B_CONF			82
++#define CLK_INFRA_MFG_VCG			83
++#define CLK_INFRA_13M				84
++#define CLK_INFRA_NR				85
 +
 +/* IMG_SYS */
-+#define	CLK_IMG_FDVT	1
-+#define	CLK_IMG_DPE	2
-+#define	CLK_IMG_DIP	3
-+#define	CLK_IMG_LARB6	4
-+#define CLK_IMG_NR	5
++#define	CLK_IMG_FDVT				1
++#define	CLK_IMG_DPE				2
++#define	CLK_IMG_DIP				3
++#define	CLK_IMG_LARB6				4
++#define CLK_IMG_NR				5
 +
 +/* MM_SYS */
-+#define	CLK_MM_SMI_COMMON	1
-+#define	CLK_MM_SMI_LARB0	2
-+#define	CLK_MM_SMI_LARB5	3
-+#define	CLK_MM_CAM_MDP	4
-+#define	CLK_MM_MDP_RDMA0	5
-+#define	CLK_MM_MDP_RDMA1	6
-+#define	CLK_MM_MDP_RSZ0	7
-+#define	CLK_MM_MDP_RSZ1	8
-+#define	CLK_MM_MDP_RSZ2	9
-+#define	CLK_MM_MDP_TDSHP	10
-+#define	CLK_MM_MDP_COLOR	11
-+#define	CLK_MM_MDP_WDMA	12
-+#define	CLK_MM_MDP_WROT0	13
-+#define	CLK_MM_MDP_WROT1	14
-+#define	CLK_MM_FAKE_ENG	15
-+#define	CLK_MM_DISP_OVL0	16
-+#define	CLK_MM_DISP_OVL1	17
-+#define	CLK_MM_DISP_OVL0_2L	18
-+#define	CLK_MM_DISP_OVL1_2L	19
-+#define	CLK_MM_DISP_RDMA0	20
-+#define	CLK_MM_DISP_RDMA1	21
-+#define	CLK_MM_DISP_WDMA0	22
-+#define	CLK_MM_DISP_WDMA1	23
-+#define	CLK_MM_DISP_COLOR	24
-+#define	CLK_MM_DISP_CCORR	25
-+#define	CLK_MM_DISP_AAL	26
-+#define	CLK_MM_DISP_GAMMA	27
-+#define	CLK_MM_DISP_OD	28
-+#define	CLK_MM_DISP_DITHER	29
-+#define	CLK_MM_DISP_UFOE	30
-+#define	CLK_MM_DISP_DSC	31
-+#define	CLK_MM_DISP_SPLIT	32
-+#define	CLK_MM_DSI0_MM_CLOCK	33
-+#define	CLK_MM_DSI1_MM_CLOCK	34
-+#define	CLK_MM_DPI_MM_CLOCK	35
-+#define	CLK_MM_DPI_INTERFACE_CLOCK	36
-+#define	CLK_MM_LARB4_AXI_ASIF_MM_CLOCK	37
-+#define	CLK_MM_LARB4_AXI_ASIF_MJC_CLOCK	38
-+#define	CLK_MM_DISP_OVL0_MOUT_CLOCK	39
-+#define	CLK_MM_FAKE_ENG2	40
-+#define	CLK_MM_DSI0_INTERFACE_CLOCK	41
-+#define	CLK_MM_DSI1_INTERFACE_CLOCK	42
-+#define CLK_MM_NR		43
++#define	CLK_MM_SMI_COMMON			1
++#define	CLK_MM_SMI_LARB0			2
++#define	CLK_MM_SMI_LARB5			3
++#define	CLK_MM_CAM_MDP				4
++#define	CLK_MM_MDP_RDMA0			5
++#define	CLK_MM_MDP_RDMA1			6
++#define	CLK_MM_MDP_RSZ0				7
++#define	CLK_MM_MDP_RSZ1				8
++#define	CLK_MM_MDP_RSZ2				9
++#define	CLK_MM_MDP_TDSHP			10
++#define	CLK_MM_MDP_COLOR			11
++#define	CLK_MM_MDP_WDMA				12
++#define	CLK_MM_MDP_WROT0			13
++#define	CLK_MM_MDP_WROT1			14
++#define	CLK_MM_FAKE_ENG				15
++#define	CLK_MM_DISP_OVL0			16
++#define	CLK_MM_DISP_OVL1			17
++#define	CLK_MM_DISP_OVL0_2L			18
++#define	CLK_MM_DISP_OVL1_2L			19
++#define	CLK_MM_DISP_RDMA0			20
++#define	CLK_MM_DISP_RDMA1			21
++#define	CLK_MM_DISP_WDMA0			22
++#define	CLK_MM_DISP_WDMA1			23
++#define	CLK_MM_DISP_COLOR			24
++#define	CLK_MM_DISP_CCORR			25
++#define	CLK_MM_DISP_AAL				26
++#define	CLK_MM_DISP_GAMMA			27
++#define	CLK_MM_DISP_OD				28
++#define	CLK_MM_DISP_DITHER			29
++#define	CLK_MM_DISP_UFOE			30
++#define	CLK_MM_DISP_DSC				31
++#define	CLK_MM_DISP_SPLIT			32
++#define	CLK_MM_DSI0_MM_CLOCK			33
++#define	CLK_MM_DSI1_MM_CLOCK			34
++#define	CLK_MM_DPI_MM_CLOCK			35
++#define	CLK_MM_DPI_INTERFACE_CLOCK		36
++#define	CLK_MM_LARB4_AXI_ASIF_MM_CLOCK		37
++#define	CLK_MM_LARB4_AXI_ASIF_MJC_CLOCK		38
++#define	CLK_MM_DISP_OVL0_MOUT_CLOCK		39
++#define	CLK_MM_FAKE_ENG2			40
++#define	CLK_MM_DSI0_INTERFACE_CLOCK		41
++#define	CLK_MM_DSI1_INTERFACE_CLOCK		42
++#define CLK_MM_NR				43
 +
 +/* VDEC_SYS */
-+#define	CLK_VDEC_CKEN_ENG	1
-+#define	CLK_VDEC_ACTIVE	2
-+#define	CLK_VDEC_CKEN	3
-+#define	CLK_VDEC_LARB1_CKEN	4
-+#define CLK_VDEC_NR		5
++#define	CLK_VDEC_CKEN_ENG			1
++#define	CLK_VDEC_ACTIVE				2
++#define	CLK_VDEC_CKEN				3
++#define	CLK_VDEC_LARB1_CKEN			4
++#define CLK_VDEC_NR				5
 +
 +/* VENC_SYS */
-+#define	CLK_VENC_0	1
-+#define	CLK_VENC_1	2
-+#define	CLK_VENC_2	3
-+#define	CLK_VENC_3	4
-+#define CLK_VENC_NR	5
++#define	CLK_VENC_0				1
++#define	CLK_VENC_1				2
++#define	CLK_VENC_2				3
++#define	CLK_VENC_3				4
++#define CLK_VENC_NR				5
 +
-+#endif	/* _DT_BINDINGS_CLK_MT6797_H */
++#endif /* _DT_BINDINGS_CLK_MT6797_H */
 -- 
 2.7.4
 
