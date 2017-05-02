@@ -1,7 +1,7 @@
-From c42014d7bd6e10dbfa2606e55b501d7279d20db3 Mon Sep 17 00:00:00 2001
+From d5d9b844a63456d4b659bae06a107ac47717826a Mon Sep 17 00:00:00 2001
 From: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:32 +0800
-Subject: [PATCH 06/13] clk: mediatek: add clk support for MT6797
+Subject: [PATCH 06/10] clk: mediatek: add clk support for MT6797
 
 Add MT6797 clock support, include topckgen, apmixedsys, infracfg
 and subsystem clocks
@@ -27,10 +27,10 @@ Tested-by: Matthias Brugger <matthias.bgg@gmail.com>
  create mode 100644 include/dt-bindings/clock/mt6797-clk.h
 
 diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index 0bd631a..4b91eed 100644
+index a01ef78..9637080d 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
-@@ -49,6 +49,39 @@ config COMMON_CLK_MT2701_BDPSYS
+@@ -50,6 +50,39 @@ config COMMON_CLK_MT2701_BDPSYS
  	---help---
  	  This driver supports Mediatek MT2701 bdpsys clocks.
  
@@ -69,7 +69,7 @@ index 0bd631a..4b91eed 100644
 +
  config COMMON_CLK_MT8135
  	bool "Clock driver for Mediatek MT8135"
- 	depends on ARCH_MEDIATEK || COMPILE_TEST
+ 	depends on (ARCH_MEDIATEK && ARM) || COMPILE_TEST
 diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
 index 19ae7ef..5c3afb8 100644
 --- a/drivers/clk/mediatek/Makefile

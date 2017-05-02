@@ -1,7 +1,7 @@
-From 372a30ee91b0f61b1b35c276fa7239dfac27ea84 Mon Sep 17 00:00:00 2001
+From 0c456f8dfd2ba72bcae94937705cce84c91b1d55 Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:34 +0800
-Subject: [PATCH 08/13] soc: mediatek: add MT6797 power dt-bindings
+Subject: [PATCH 08/10] soc: mediatek: add MT6797 power dt-bindings
 
 This adds power dt-bindings for MT6797
 

@@ -1,7 +1,7 @@
-From 0b9e245ca05890463f9d274444c96f4082f94f9b Mon Sep 17 00:00:00 2001
+From bae15079b03ac7916b892a76cf692b38f9705ad2 Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:27 +0800
-Subject: [PATCH 01/13] Document: DT: mediatek: multiple base address support
+Subject: [PATCH 01/10] Document: DT: mediatek: multiple base address support
  for sysirq
 
 This describes how to specify multiple base addresses for sysirq

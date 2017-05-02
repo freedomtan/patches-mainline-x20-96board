@@ -1,7 +1,7 @@
-From 8abbbf1eba3d7f340d0373b73d02600390a193e3 Mon Sep 17 00:00:00 2001
+From b4816292692227eede13f4900ddd3bbc44398e5f Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:33 +0800
-Subject: [PATCH 07/13] soc: mediatek: refine scysys for mediatek platforms
+Subject: [PATCH 07/10] soc: mediatek: refine scysys for mediatek platforms
 
 This adds 2 refinements: avoid fixed spm power statue and add vdec item
 

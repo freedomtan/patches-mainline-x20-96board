@@ -1,7 +1,7 @@
-From 9e8a029518101aeb5a340942bc93872280a7e969 Mon Sep 17 00:00:00 2001
+From 709e79d495617d13d940b4e3c5aaa85cd6219d3b Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:35 +0800
-Subject: [PATCH 09/13] soc: mediatek: add MT6797 scysys support
+Subject: [PATCH 09/10] soc: mediatek: add MT6797 scysys support
 
 This adds scysys support for MT6797
 

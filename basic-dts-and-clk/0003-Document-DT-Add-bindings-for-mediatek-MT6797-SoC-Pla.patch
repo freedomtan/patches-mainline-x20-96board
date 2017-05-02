@@ -1,7 +1,7 @@
-From 12527fb0cb48cd1b020628a7e62eb6f87d09cacf Mon Sep 17 00:00:00 2001
+From 7e9b23fd9f06aecb36d8408e0a5625f21e085775 Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:29 +0800
-Subject: [PATCH 03/13] Document: DT: Add bindings for mediatek MT6797 SoC
+Subject: [PATCH 03/10] Document: DT: Add bindings for mediatek MT6797 SoC
  Platform
 
 This adds dt-binding documentation for Mediatek MT6797. Only

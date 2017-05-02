@@ -1,7 +1,7 @@
-From fb0a21b29f64e8f41e9538fa85ee7d5dceccd3af Mon Sep 17 00:00:00 2001
+From d8f6c9135df26ce53eccfa966e4674d8a19a49fa Mon Sep 17 00:00:00 2001
 From: Mars Cheng <mars.cheng@mediatek.com>
 Date: Mon, 6 Feb 2017 20:15:28 +0800
-Subject: [PATCH 02/13] irqchip: mtk-sysirq: extend intpol base to arbitrary
+Subject: [PATCH 02/10] irqchip: mtk-sysirq: extend intpol base to arbitrary
  number
 
 Originally driver only supports one base. However, MT6797 has
