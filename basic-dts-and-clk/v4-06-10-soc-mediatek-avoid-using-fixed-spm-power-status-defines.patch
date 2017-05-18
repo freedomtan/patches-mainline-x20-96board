@@ -1,37 +1,37 @@
-From b4816292692227eede13f4900ddd3bbc44398e5f Mon Sep 17 00:00:00 2001
+From patchwork Sat Apr  8 01:20:31 2017
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [v4,06/10] soc: mediatek: avoid using fixed spm power status defines
 From: Mars Cheng <mars.cheng@mediatek.com>
-Date: Mon, 6 Feb 2017 20:15:33 +0800
-Subject: [PATCH 07/10] soc: mediatek: refine scysys for mediatek platforms
+X-Patchwork-Id: 9670887
+Message-Id: <1491614435-23754-7-git-send-email-mars.cheng@mediatek.com>
+To: Stephen Boyd <sboyd@codeaurora.org>, Matthias Brugger
+ <matthias.bgg@gmail.com>
+Cc: devicetree@vger.kernel.org, CC Hwang <cc.hwang@mediatek.com>,
+ wsd_upstream@mediatek.com, Mars Cheng <mars.cheng@mediatek.com>,
+ Loda Chou <loda.chou@mediatek.com>, linux-kernel@vger.kernel.org,
+ Jades Shih <jades.shih@mediatek.com>,
+ Miles Chen <miles.chen@mediatek.com>, 
+ Kevin-CW Chen <kevin-cw.chen@mediatek.com>,
+ linux-mediatek@lists.infradead.org, 
+ Yingjoe Chen <yingjoe.chen@mediatek.com>, linux-clk@vger.kernel.org
+Date: Sat, 8 Apr 2017 09:20:31 +0800
 
-This adds 2 refinements: avoid fixed spm power statue and add vdec item
+Use variables to replace fixed defines since the offset
+of the status of spm power might be different for some chips
 
 Signed-off-by: Mars Cheng <mars.cheng@mediatek.com>
 Signed-off-by: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
 ---
- drivers/soc/mediatek/mtk-scpsys.c | 35 +++++++++++++++++++++++++++++------
- 1 file changed, 29 insertions(+), 6 deletions(-)
+ drivers/soc/mediatek/mtk-scpsys.c |   33 +++++++++++++++++++++++++++------
+ 1 file changed, 27 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/soc/mediatek/mtk-scpsys.c b/drivers/soc/mediatek/mtk-scpsys.c
-index beb7916..a8ba800 100644
+index beb7916..eadbf0d 100644
 --- a/drivers/soc/mediatek/mtk-scpsys.c
 +++ b/drivers/soc/mediatek/mtk-scpsys.c
-@@ -71,6 +71,7 @@ enum clk_id {
- 	CLK_VENC,
- 	CLK_VENC_LT,
- 	CLK_ETHIF,
-+	CLK_VDEC,
- 	CLK_MAX,
- };
- 
-@@ -81,6 +82,7 @@ static const char * const clk_names[] = {
- 	"venc",
- 	"venc_lt",
- 	"ethif",
-+	"vdec",
- 	NULL,
- };
- 
-@@ -107,21 +109,28 @@ struct scp_domain {
+@@ -107,21 +107,28 @@ struct scp_domain {
  	struct regulator *supply;
  };
  
@@ -63,7 +63,7 @@ index beb7916..a8ba800 100644
  
  	/*
  	 * A domain is on when both status bits are set. If only one is set
-@@ -346,7 +355,8 @@ static void init_clks(struct platform_device *pdev, struct clk **clk)
+@@ -346,7 +353,8 @@ static void init_clks(struct platform_device *pdev, struct clk **clk)
  }
  
  static struct scp *init_scp(struct platform_device *pdev,
@@ -73,7 +73,7 @@ index beb7916..a8ba800 100644
  {
  	struct genpd_onecell_data *pd_data;
  	struct resource *res;
-@@ -358,6 +368,9 @@ static struct scp *init_scp(struct platform_device *pdev,
+@@ -358,6 +366,9 @@ static struct scp *init_scp(struct platform_device *pdev,
  	if (!scp)
  		return ERR_PTR(-ENOMEM);
  
@@ -83,7 +83,7 @@ index beb7916..a8ba800 100644
  	scp->dev = &pdev->dev;
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -556,8 +569,13 @@ static const struct scp_domain_data scp_domain_data_mt2701[] = {
+@@ -556,8 +567,13 @@ static void mtk_register_power_domains(struct platform_device *pdev,
  static int __init scpsys_probe_mt2701(struct platform_device *pdev)
  {
  	struct scp *scp;
@@ -98,7 +98,7 @@ index beb7916..a8ba800 100644
  	if (IS_ERR(scp))
  		return PTR_ERR(scp);
  
-@@ -667,8 +685,13 @@ static int __init scpsys_probe_mt8173(struct platform_device *pdev)
+@@ -667,8 +683,13 @@ static int __init scpsys_probe_mt8173(struct platform_device *pdev)
  	struct scp *scp;
  	struct genpd_onecell_data *pd_data;
  	int ret;
@@ -113,6 +113,3 @@ index beb7916..a8ba800 100644
  	if (IS_ERR(scp))
  		return PTR_ERR(scp);
  
--- 
-2.7.4
-

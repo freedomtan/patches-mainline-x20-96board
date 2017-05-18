@@ -1,0 +1,47 @@
+From patchwork Sat Apr  8 01:20:32 2017
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [v4,07/10] soc: mediatek: add vdec item for scpsys
+From: Mars Cheng <mars.cheng@mediatek.com>
+X-Patchwork-Id: 9670883
+Message-Id: <1491614435-23754-8-git-send-email-mars.cheng@mediatek.com>
+To: Stephen Boyd <sboyd@codeaurora.org>, Matthias Brugger
+ <matthias.bgg@gmail.com>
+Cc: devicetree@vger.kernel.org, CC Hwang <cc.hwang@mediatek.com>,
+ wsd_upstream@mediatek.com, Mars Cheng <mars.cheng@mediatek.com>,
+ Loda Chou <loda.chou@mediatek.com>, linux-kernel@vger.kernel.org,
+ Jades Shih <jades.shih@mediatek.com>,
+ Miles Chen <miles.chen@mediatek.com>, 
+ Kevin-CW Chen <kevin-cw.chen@mediatek.com>,
+ linux-mediatek@lists.infradead.org, 
+ Yingjoe Chen <yingjoe.chen@mediatek.com>, linux-clk@vger.kernel.org
+Date: Sat, 8 Apr 2017 09:20:32 +0800
+
+for some chips, there is vdec item in scpsys, this patch adds it.
+
+Signed-off-by: Mars Cheng <mars.cheng@mediatek.com>
+---
+ drivers/soc/mediatek/mtk-scpsys.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/soc/mediatek/mtk-scpsys.c b/drivers/soc/mediatek/mtk-scpsys.c
+index eadbf0d..a8ba800 100644
+--- a/drivers/soc/mediatek/mtk-scpsys.c
++++ b/drivers/soc/mediatek/mtk-scpsys.c
+@@ -71,6 +71,7 @@ enum clk_id {
+ 	CLK_VENC,
+ 	CLK_VENC_LT,
+ 	CLK_ETHIF,
++	CLK_VDEC,
+ 	CLK_MAX,
+ };
+ 
+@@ -81,6 +82,7 @@ enum clk_id {
+ 	"venc",
+ 	"venc_lt",
+ 	"ethif",
++	"vdec",
+ 	NULL,
+ };
+ 

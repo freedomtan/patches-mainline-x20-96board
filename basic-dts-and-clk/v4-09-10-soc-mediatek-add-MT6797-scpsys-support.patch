@@ -1,20 +1,35 @@
-From 709e79d495617d13d940b4e3c5aaa85cd6219d3b Mon Sep 17 00:00:00 2001
+From patchwork Sat Apr  8 01:20:34 2017
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [v4,09/10] soc: mediatek: add MT6797 scpsys support
 From: Mars Cheng <mars.cheng@mediatek.com>
-Date: Mon, 6 Feb 2017 20:15:35 +0800
-Subject: [PATCH 09/10] soc: mediatek: add MT6797 scysys support
+X-Patchwork-Id: 9670879
+Message-Id: <1491614435-23754-10-git-send-email-mars.cheng@mediatek.com>
+To: Stephen Boyd <sboyd@codeaurora.org>, Matthias Brugger
+ <matthias.bgg@gmail.com>
+Cc: devicetree@vger.kernel.org, CC Hwang <cc.hwang@mediatek.com>,
+ wsd_upstream@mediatek.com, Mars Cheng <mars.cheng@mediatek.com>,
+ Loda Chou <loda.chou@mediatek.com>, linux-kernel@vger.kernel.org,
+ Jades Shih <jades.shih@mediatek.com>,
+ Miles Chen <miles.chen@mediatek.com>, 
+ Kevin-CW Chen <kevin-cw.chen@mediatek.com>,
+ linux-mediatek@lists.infradead.org, 
+ Yingjoe Chen <yingjoe.chen@mediatek.com>, linux-clk@vger.kernel.org
+Date: Sat, 8 Apr 2017 09:20:34 +0800
 
-This adds scysys support for MT6797
+This adds scpsys support for MT6797
 
 Signed-off-by: Mars Cheng <mars.cheng@mediatek.com>
 Signed-off-by: Kevin-CW Chen <kevin-cw.chen@mediatek.com>
 ---
- drivers/soc/mediatek/mtk-scpsys.c        | 114 +++++++++++++++++++++++++++++++
- include/dt-bindings/power/mt6797-power.h |  30 ++++++++
+ drivers/soc/mediatek/mtk-scpsys.c        |  114 ++++++++++++++++++++++++++++++
+ include/dt-bindings/power/mt6797-power.h |   30 ++++++++
  2 files changed, 144 insertions(+)
  create mode 100644 include/dt-bindings/power/mt6797-power.h
 
 diff --git a/drivers/soc/mediatek/mtk-scpsys.c b/drivers/soc/mediatek/mtk-scpsys.c
-index a8ba800..fc7bf95 100644
+index a8ba800..ceb2cc4 100644
 --- a/drivers/soc/mediatek/mtk-scpsys.c
 +++ b/drivers/soc/mediatek/mtk-scpsys.c
 @@ -21,6 +21,7 @@
@@ -116,22 +131,22 @@ index a8ba800..fc7bf95 100644
 +	pd_data = &scp->pd_data;
 +
 +	ret = pm_genpd_add_subdomain(pd_data->domains[MT6797_POWER_DOMAIN_MM],
-+				pd_data->domains[MT6797_POWER_DOMAIN_VDEC]);
++				     pd_data->domains[MT6797_POWER_DOMAIN_VDEC]);
 +	if (ret && IS_ENABLED(CONFIG_PM))
 +		dev_err(&pdev->dev, "Failed to add subdomain: %d\n", ret);
 +
 +	ret = pm_genpd_add_subdomain(pd_data->domains[MT6797_POWER_DOMAIN_MM],
-+				pd_data->domains[MT6797_POWER_DOMAIN_ISP]);
++				     pd_data->domains[MT6797_POWER_DOMAIN_ISP]);
 +	if (ret && IS_ENABLED(CONFIG_PM))
 +		dev_err(&pdev->dev, "Failed to add subdomain: %d\n", ret);
 +
 +	ret = pm_genpd_add_subdomain(pd_data->domains[MT6797_POWER_DOMAIN_MM],
-+				pd_data->domains[MT6797_POWER_DOMAIN_VENC]);
++				     pd_data->domains[MT6797_POWER_DOMAIN_VENC]);
 +	if (ret && IS_ENABLED(CONFIG_PM))
 +		dev_err(&pdev->dev, "Failed to add subdomain: %d\n", ret);
 +
 +	ret = pm_genpd_add_subdomain(pd_data->domains[MT6797_POWER_DOMAIN_MM],
-+		pd_data->domains[MT6797_POWER_DOMAIN_MJC]);
++				     pd_data->domains[MT6797_POWER_DOMAIN_MJC]);
 +	if (ret && IS_ENABLED(CONFIG_PM))
 +		dev_err(&pdev->dev, "Failed to add subdomain: %d\n", ret);
 +
@@ -142,7 +157,7 @@ index a8ba800..fc7bf95 100644
   * MT8173 power domain support
   */
  
-@@ -721,6 +832,9 @@ static const struct of_device_id of_scpsys_match_tbl[] = {
+@@ -721,6 +832,9 @@ static int __init scpsys_probe_mt8173(struct platform_device *pdev)
  		.compatible = "mediatek,mt2701-scpsys",
  		.data = scpsys_probe_mt2701,
  	}, {
@@ -154,7 +169,7 @@ index a8ba800..fc7bf95 100644
  	}, {
 diff --git a/include/dt-bindings/power/mt6797-power.h b/include/dt-bindings/power/mt6797-power.h
 new file mode 100644
-index 0000000..a60c1d8
+index 0000000..d54b377
 --- /dev/null
 +++ b/include/dt-bindings/power/mt6797-power.h
 @@ -0,0 +1,30 @@
@@ -188,6 +203,3 @@ index 0000000..a60c1d8
 +#define MT6797_POWER_DOMAIN_MJC		11
 +
 +#endif /* _DT_BINDINGS_POWER_MT6797_POWER_H */
--- 
-2.7.4
-
